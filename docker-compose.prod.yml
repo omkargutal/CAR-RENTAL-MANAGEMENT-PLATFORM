@@ -1,0 +1,22 @@
+# Production Docker Compose Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  postgres:
+    # In production, database ports are strictly closed to external hosts
+    ports: !reset []
+
+  minio:
+    # In production, storage ports are strictly closed to external hosts
+    ports: !reset []
+
+  backend:
+    # In production, backend is only reachable via the proxy
+    ports: !reset []
+
+  frontend:
+    ports: !reset []
+
+  proxy:
+    ports:
+      - "80:80"
+      - "443:443"

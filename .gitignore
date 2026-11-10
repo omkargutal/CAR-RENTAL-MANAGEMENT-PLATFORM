@@ -1,0 +1,85 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+venv/
+.venv/
+ENV/
+env/
+
+# Environment and Secret files
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+!**/src/lib/**
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.pyo
+.pytest_cache/
+htmlcov/
+
+# Node / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+frontend/dist/
+frontend/build/
+*.tsbuildinfo
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+Thumbs.db
+
+# Docker volumes and local data
+minio_data/
+postgres_data/
+caddy_data/
+caddy_config/
+
+# Logs
+logs/
+*.log
+
+# Database Backups
+backups/
+*.sql
+*.sql.gz
+*.dump

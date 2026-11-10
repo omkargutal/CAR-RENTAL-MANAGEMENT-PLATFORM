@@ -1,0 +1,77 @@
+{
+    # Admin API configuration for graceful reloads
+    admin 0.0.0.0:2019
+}
+
+# Production site configuration:
+# When {$DOMAIN} is set, Caddy automatically handles HTTPS redirection, ACME certificates, and renewal.
+# When {$DOMAIN} is unset, it listens on standard HTTP port 80.
+{$DOMAIN::80} {
+    encode gzip zstd
+
+    # Production-grade HTTP Security Headers
+    header {
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+
+        # Clickjacking mitigation (allow same origin frames for payment popup interactions)
+        X-Frame-Options "SAMEORIGIN"
+
+        # XSS Protection for legacy browsers
+        X-XSS-Protection "1; mode=block"
+
+        # Referrer Policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+
+        # Permissions Policy restricting unused browser APIs
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+        # Content Security Policy (allows self, Google Fonts, and Razorpay checkout assets)
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://api.razorpay.com https://*.razorpay.com; frame-src 'self' https://api.razorpay.com; object-src 'none'; base-uri 'self';"
+
+        # Strict Transport Security (HSTS) - applied when served over HTTPS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+
+    # API and OpenAPI documentation routed to FastAPI Backend
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            transport http {
+                response_header_timeout 60s
+            }
+        }
+    }
+
+    # Container health & readiness probes
+    handle /healthz {
+        reverse_proxy backend:8000
+    }
+
+    handle /readyz {
+        reverse_proxy backend:8000
+    }
+
+    # MinIO S3 object storage upload path
+    handle /storage/* {
+        uri strip_prefix /storage
+        reverse_proxy minio:9000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # Frontend Single Page Application fallback to Nginx
+    handle {
+        reverse_proxy frontend:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}
