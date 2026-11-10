@@ -13,6 +13,7 @@ import { SafetyGuidelinesPage } from "@/pages/SafetyGuidelinesPage";
 import { CancellationPolicyPage } from "@/pages/CancellationPolicyPage";
 import { TermsAndConditionsPage } from "@/pages/TermsAndConditionsPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { AdminLoginPage } from "@/pages/AdminLoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { BookingsPage } from "@/pages/BookingsPage";
@@ -31,7 +32,7 @@ function AppLayout() {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin/login" element={<LoginPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/admin/*"
