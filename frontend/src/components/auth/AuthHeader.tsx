@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, Car, Home, Phone, Info, Compass } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface AuthHeaderProps {
-  currentView: "login" | "register" | "admin";
+  currentView?: "login" | "register" | "admin";
 }
 
-export function AuthHeader({ currentView }: AuthHeaderProps) {
+export function AuthHeader({ currentView: _currentView }: AuthHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -30,50 +29,13 @@ export function AuthHeader({ currentView }: AuthHeaderProps) {
           </div>
         </Link>
 
-        {/* Right action & Hamburger */}
-        <div className="flex items-center gap-2">
-          {currentView === "login" && (
-            <Link to="/register">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs font-bold border-amber-400/60 text-amber-700 hover:bg-amber-50 hover:text-amber-800 rounded-lg px-2.5 py-1.5 h-8"
-              >
-                Create Account
-              </Button>
-            </Link>
-          )}
-
-          {currentView === "register" && (
-            <Link to="/login">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs font-bold border-amber-400/60 text-amber-700 hover:bg-amber-50 hover:text-amber-800 rounded-lg px-2.5 py-1.5 h-8"
-              >
-                Sign In
-              </Button>
-            </Link>
-          )}
-
-          {currentView === "admin" && (
-            <Link to="/login">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-lg px-2.5 py-1.5 h-8"
-              >
-                Customer Portal
-              </Button>
-            </Link>
-          )}
-
-          {/* Hamburger toggle button */}
+        {/* Hamburger Menu Toggle */}
+        <div className="flex items-center">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/40"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
