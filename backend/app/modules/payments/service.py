@@ -254,7 +254,27 @@ class PaymentService(BaseService[Payment]):
         booking.expires_at = None
         await self.booking_repo.update(booking)
 
+        # Notify customer of successful payment and booking confirmation
+        try:
+            from app.modules.notifications.models import Notification, NotificationChannel, NotificationStatus
+            recipient = booking.customer_email
+            if recipient:
+                conf_notif = Notification(
+                    recipient=recipient,
+                    channel=NotificationChannel.IN_APP,
+                    subject=f"Payment Verified: Booking {booking.booking_reference} Confirmed! 🎉",
+                    message=f"We have verified your payment of ₹{order.amount:.2f}. Your cab booking ({booking.booking_reference}) is confirmed! Driver and car details will be shared prior to pickup.",
+                    link_url=f"/bookings?ref={booking.booking_reference}",
+                    is_read=False,
+                    status=NotificationStatus.SENT,
+                )
+                self.payment_repo.db.add(conf_notif)
+                await self.payment_repo.db.flush()
+        except Exception as e:
+            logger.warning(f"Could not persist payment confirmation notification: {e}")
+
         # 8. Record transaction history
+
         tx = PaymentTransaction(
             payment_id=saved_payment.id,
             order_id=order.id,

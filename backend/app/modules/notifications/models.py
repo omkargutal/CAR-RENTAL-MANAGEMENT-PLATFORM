@@ -1,19 +1,19 @@
 from enum import Enum
-from sqlalchemy import Enum as SQLEnum, String, Text
+from sqlalchemy import Boolean, Enum as SQLEnum, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.common.models import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class NotificationChannel(str, Enum):
-    EMAIL = "email"
-    SMS = "sms"
-    IN_APP = "in_app"
+    EMAIL = "EMAIL"
+    SMS = "SMS"
+    IN_APP = "IN_APP"
 
 
 class NotificationStatus(str, Enum):
-    PENDING = "pending"
-    SENT = "sent"
-    FAILED = "failed"
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
 
 
 class Notification(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -34,3 +34,6 @@ class Notification(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         index=True,
     )
     error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    link_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+

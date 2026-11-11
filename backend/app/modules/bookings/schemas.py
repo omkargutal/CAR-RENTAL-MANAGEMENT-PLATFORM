@@ -132,3 +132,13 @@ class BookingRead(BaseSchema):
     vehicle: Optional[BookingVehicleSummary] = None
     pickup_location: Optional[BookingLocationSummary] = None
     return_location: Optional[BookingLocationSummary] = None
+
+
+class CustomerStatsResponse(BaseSchema):
+    total_bookings: int = 0
+    upcoming_trips: int = 0
+    completed_trips: int = 0
+    cancelled_bookings: int = 0
+    total_amount_spent: Decimal = Decimal("0.00")
+    currency: str = "INR"
+

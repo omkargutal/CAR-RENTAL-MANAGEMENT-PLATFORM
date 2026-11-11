@@ -10,6 +10,7 @@ class NotificationBase(BaseSchema):
     channel: NotificationChannel = NotificationChannel.EMAIL
     subject: str
     message: str
+    link_url: Optional[str] = None
 
 
 class NotificationCreate(NotificationBase):
@@ -19,6 +20,12 @@ class NotificationCreate(NotificationBase):
 class NotificationRead(NotificationBase):
     id: uuid.UUID
     status: NotificationStatus
+    is_read: bool = False
     error_detail: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+
+class UnreadCountResponse(BaseSchema):
+    unread_count: int
+

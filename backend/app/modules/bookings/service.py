@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 import uuid
 from asyncpg import Range
 from sqlalchemy.exc import IntegrityError
@@ -17,6 +17,7 @@ from app.modules.bookings.schemas import (
     BookingQuoteResponse,
     BookingStatusUpdate,
     BookingUpdate,
+    CustomerStatsResponse,
 )
 from app.modules.locations.repository import LocationRepository
 from app.modules.users.repository import AuditLogRepository
@@ -340,3 +341,68 @@ class BookingService(BaseService[Booking]):
 
     async def expire_stale_bookings(self) -> int:
         return await self.booking_repo.expire_stale_bookings()
+
+    async def get_customer_stats(self, user: Any) -> CustomerStatsResponse:
+        from app.modules.payments.models import Payment, PaymentStatus
+        from sqlalchemy import func, or_, select
+
+        customer_id = user.customer.id if getattr(user, "customer", None) else None
+
+        # 1. Fetch bookings for customer
+        if customer_id:
+            stmt = select(Booking).where(
+                or_(Booking.customer_id == customer_id, Booking.customer_email == user.email),
+                Booking.is_deleted == False,
+            )
+        else:
+            stmt = select(Booking).where(
+                Booking.customer_email == user.email,
+                Booking.is_deleted == False,
+            )
+        result = await self.booking_repo.db.execute(stmt)
+        bookings = result.scalars().all()
+
+        total_bookings = len(bookings)
+        now = datetime.now(timezone.utc)
+        upcoming_trips = 0
+        completed_trips = 0
+        cancelled_bookings = 0
+        booking_ids = []
+
+        for b in bookings:
+            booking_ids.append(b.id)
+            if b.status == BookingStatus.COMPLETED:
+                completed_trips += 1
+            elif b.status in (BookingStatus.CANCELLED, BookingStatus.REJECTED):
+                cancelled_bookings += 1
+            elif b.status in (
+                BookingStatus.CONFIRMED,
+                BookingStatus.ACTIVE,
+                BookingStatus.PENDING,
+                BookingStatus.AWAITING_PAYMENT,
+            ):
+                if b.end_datetime >= now:
+                    upcoming_trips += 1
+
+        # 2. Total amount spent from verified/captured payments
+        total_amount_spent = Decimal("0.00")
+        if booking_ids:
+            pay_stmt = select(func.coalesce(func.sum(Payment.amount), Decimal("0.00"))).where(
+                Payment.booking_id.in_(booking_ids),
+                Payment.status.in_([PaymentStatus.CAPTURED, PaymentStatus.SUCCEEDED]),
+                Payment.is_deleted == False,
+            )
+            pay_res = await self.booking_repo.db.execute(pay_stmt)
+            val = pay_res.scalar()
+            if val is not None:
+                total_amount_spent = Decimal(str(val))
+
+        return CustomerStatsResponse(
+            total_bookings=total_bookings,
+            upcoming_trips=upcoming_trips,
+            completed_trips=completed_trips,
+            cancelled_bookings=cancelled_bookings,
+            total_amount_spent=total_amount_spent,
+            currency="INR",
+        )
+

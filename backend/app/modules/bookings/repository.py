@@ -69,6 +69,23 @@ class BookingRepository(BaseRepository[Booking]):
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
+    async def list_for_user(
+        self, customer_id: Optional[uuid.UUID], email: str, skip: int = 0, limit: int = 50
+    ) -> Sequence[Booking]:
+        conditions = [func.lower(Booking.customer_email) == email.lower().strip()]
+        if customer_id:
+            conditions.append(Booking.customer_id == customer_id)
+        stmt = (
+            select(Booking)
+            .where(or_(*conditions), Booking.is_deleted == False)
+            .order_by(Booking.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+
     async def find_overlapping_bookings(
         self,
         vehicle_id: uuid.UUID,

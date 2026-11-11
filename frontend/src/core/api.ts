@@ -218,7 +218,15 @@ export const authApi = {
       method: "DELETE",
     });
   },
+
+  async checkEmail(email: string): Promise<{ exists: boolean }> {
+    return apiRequest<{ exists: boolean }>("/api/v1/auth/check-email", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
 };
+
 
 export const usersApi = {
   async listUsers(params?: {
@@ -656,8 +664,10 @@ export interface Booking {
   total_amount_cents: number;
   total_amount: number;
   total_days: number;
+  estimated_km?: number | null;
   buffer_minutes: number;
   expires_at?: string | null;
+
   cancellation_reason?: string | null;
   idempotency_key?: string | null;
   created_at: string;
@@ -748,9 +758,58 @@ export const bookingsApi = {
     const qs = q.toString() ? `?${q.toString()}` : "";
     return apiRequest<Booking[]>(`/api/v1/bookings${qs}`);
   },
+
+  async getMyBookingStats(): Promise<CustomerStats> {
+    return apiRequest<CustomerStats>("/api/v1/bookings/my-stats");
+  },
+};
+
+export interface CustomerStats {
+  total_bookings: number;
+  upcoming_trips: number;
+  completed_trips: number;
+  cancelled_bookings: number;
+  total_amount_spent: number;
+  currency: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  recipient: string;
+  channel: string;
+  subject: string;
+  message: string;
+  link_url?: string | null;
+  status: string;
+  is_read: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const notificationsApi = {
+  async listNotifications(): Promise<NotificationItem[]> {
+    return apiRequest<NotificationItem[]>("/api/v1/notifications");
+  },
+
+  async getUnreadCount(): Promise<{ unread_count: number }> {
+    return apiRequest<{ unread_count: number }>("/api/v1/notifications/unread-count");
+  },
+
+  async markAsRead(notificationId: string): Promise<NotificationItem> {
+    return apiRequest<NotificationItem>(`/api/v1/notifications/${notificationId}/read`, {
+      method: "PATCH",
+    });
+  },
+
+  async markAllAsRead(): Promise<{ marked_count: number }> {
+    return apiRequest<{ marked_count: number }>("/api/v1/notifications/mark-all-read", {
+      method: "POST",
+    });
+  },
 };
 
 export interface FleetUtilizationKpi {
+
   total_vehicles: number;
   available_vehicles: number;
   rented_vehicles: number;

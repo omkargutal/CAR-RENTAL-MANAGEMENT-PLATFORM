@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Save, User as UserIcon, Lock, Bell, CreditCard, CheckCircle2, AlertCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  Camera, Save, User as UserIcon, Lock,
+  CheckCircle2, AlertCircle, ShieldCheck,
+  Mail, Phone, FileText, ArrowRight, Calendar
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +12,8 @@ import { useAuth } from "@/context/AuthContext";
 import { apiRequest } from "@/core/api";
 
 const TABS = [
-  { id: "personal", label: "Personal Info", Icon: UserIcon },
-  { id: "security", label: "Security", Icon: Lock },
-  { id: "notifications", label: "Notifications", Icon: Bell },
-  { id: "payment", label: "Payment", Icon: CreditCard },
+  { id: "personal", label: "Personal Information", Icon: UserIcon, desc: "Name, contact & identity" },
+  { id: "security", label: "Security & Password", Icon: Lock, desc: "Password & authentication" },
 ];
 
 export function ProfilePage() {
@@ -157,21 +160,35 @@ export function ProfilePage() {
   const avatarUrl = docs.avatar_url;
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-16">
-      <div className="bg-white border-b border-slate-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-          <h1 className="text-3xl font-extrabold text-slate-900">My Profile</h1>
-          <p className="text-slate-500 mt-1">Manage your personal account details, documents, and credentials</p>
+    <div className="min-h-screen bg-slate-50 pt-16 lg:pt-[72px] pb-16">
+      {/* Top Banner & Header */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-[1336px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+          <div className="space-y-1 sm:space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-orange-600" />
+              <span className="text-xs font-bold uppercase tracking-wider text-orange-600">
+                MY ACCOUNT
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              My Profile & Account Settings
+            </h1>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-xl">
+              Manage your personal identity, contact details, identity verification, and security credentials.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Panel */}
-          <div className="lg:col-span-1 space-y-4">
-            {/* Avatar & User Details */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 text-center shadow-sm">
-              <div className="relative inline-block mb-3 group">
+      {/* Main Container */}
+      <div className="max-w-[1336px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          {/* Left Column: User Identity Card & Tabs Navigation */}
+          <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+            {/* User Identity Card */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 text-center shadow-sm">
+              <div className="relative inline-block mb-3.5 group">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -182,12 +199,16 @@ export function ProfilePage() {
                 <button
                   type="button"
                   onClick={handleAvatarClick}
-                  className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-orange-500/30 mx-auto overflow-hidden cursor-pointer relative group-hover:ring-4 group-hover:ring-orange-300 transition-all block focus:outline-none focus:ring-4 focus:ring-orange-400"
+                  className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-orange-500/25 mx-auto overflow-hidden cursor-pointer relative group-hover:ring-4 group-hover:ring-orange-200 transition-all block focus:outline-none focus:ring-4 focus:ring-orange-400"
                   title="Click to update profile photo"
                   aria-label="Click to update profile photo"
                 >
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt={user?.full_name || "Profile"} className="h-full w-full object-cover" />
+                    <img
+                      src={avatarUrl}
+                      alt={user?.full_name || "Profile"}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <span>{initials}</span>
                   )}
@@ -207,214 +228,335 @@ export function ProfilePage() {
                   onClick={handleAvatarClick}
                   aria-label="Upload profile photo"
                   title="Upload profile photo"
-                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-orange-500 border-2 border-white flex items-center justify-center text-white hover:bg-orange-600 active:scale-95 transition-all shadow-sm cursor-pointer"
+                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-orange-600 border-2 border-white flex items-center justify-center text-white hover:bg-orange-700 active:scale-95 transition-all shadow-sm cursor-pointer"
                 >
                   <Camera className="h-3.5 w-3.5" />
                 </button>
               </div>
 
               {avatarMsg && (
-                <p className={`text-[11px] font-semibold mb-2 ${avatarMsg.type === "success" ? "text-emerald-600" : "text-red-500"}`}>
+                <p
+                  className={`text-xs font-semibold mb-2 ${
+                    avatarMsg.type === "success" ? "text-emerald-600" : "text-rose-600"
+                  }`}
+                >
                   {avatarMsg.text}
                 </p>
               )}
 
-              <p className="font-bold text-slate-900">{user?.full_name || "Guest"}</p>
-              <p className="text-xs text-slate-500 mb-2">{user?.email}</p>
-              <div className="flex justify-center gap-1.5 flex-wrap">
-                <Badge variant={user?.role === "ADMIN" ? "gold" : "default"}>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                {user?.full_name || "Traveler"}
+              </h2>
+              <p className="text-xs text-slate-500 break-all mt-0.5 mb-3 font-medium">
+                {user?.email}
+              </p>
+
+              <div className="flex items-center justify-center gap-2 flex-wrap mb-3.5">
+                <Badge
+                  variant={user?.role === "ADMIN" ? "gold" : "outline"}
+                  className="text-[11px] font-bold uppercase tracking-wider"
+                >
                   {user?.role || "CUSTOMER"}
                 </Badge>
+                {user?.is_verified ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    <ShieldCheck className="h-3 w-3 text-emerald-600" /> Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                    Active Account
+                  </span>
+                )}
               </div>
-              <div className="mt-3 text-xs text-slate-400">
-                Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString() : "2026"}
+
+              <div className="pt-3 border-t border-slate-100 text-xs text-slate-400 flex items-center justify-center gap-1.5 font-medium">
+                <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                <span>
+                  Member since{" "}
+                  {user?.created_at
+                    ? new Date(user.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "2026"}
+                </span>
               </div>
             </div>
 
             {/* Sidebar Tabs */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-2 shadow-sm">
-              {TABS.map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    activeTab === id ? "bg-zinc-950 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-2 shadow-sm space-y-1">
+              {TABS.map(({ id, label, Icon, desc }) => {
+                const isActive = activeTab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id)}
+                    className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all ${
+                      isActive
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <div
+                      className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
+                        isActive
+                          ? "bg-white/10 text-orange-400"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold tracking-tight leading-snug">{label}</p>
+                      <p
+                        className={`text-[11px] truncate mt-0.5 ${
+                          isActive ? "text-slate-400" : "text-slate-400"
+                        }`}
+                      >
+                        {desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Navigation Links */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-sm space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 py-1 block">
+                Quick Shortcuts
+              </span>
+              <Link
+                to="/bookings"
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-orange-600 hover:bg-slate-50 transition-colors"
+              >
+                <span>My Bookings & Rides</span>
+                <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
+              </Link>
+              <Link
+                to="/dashboard"
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-orange-600 hover:bg-slate-50 transition-colors"
+              >
+                <span>Customer Dashboard</span>
+                <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
+              </Link>
             </div>
           </div>
 
-          {/* Right Panel */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+          {/* Right Column: Tab Content */}
+          <div className="lg:col-span-8 xl:col-span-9">
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
               {activeTab === "personal" && (
-                <form onSubmit={handleSavePersonal} className="p-6 space-y-5">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900 mb-1">Personal Information</h2>
-                    <p className="text-sm text-slate-500">Update your personal identity and contact details</p>
+                <form onSubmit={handleSavePersonal} className="p-6 sm:p-8 space-y-6">
+                  <div className="border-b border-slate-100 pb-4">
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                      Personal Information
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Update your contact details and identity information used for your journeys.
+                    </p>
                   </div>
 
                   {errorMsg && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2.5">
+                      <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
                       <span>{errorMsg}</span>
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Full Name</label>
-                    <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
-                    <Input type="email" value={user?.email || ""} disabled className="bg-slate-50 text-slate-500 cursor-not-allowed" />
-                    <p className="text-[11px] text-slate-400 mt-1">Email address is your primary account identifier and cannot be altered directly.</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Phone Number</label>
-                    <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 9373831167" />
-                  </div>
-
-                  {/* Document Verification: Aadhaar Details (Optional) */}
-                  <div className="border-t border-slate-100 pt-5">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-sm font-bold text-slate-900">Document Verification: Aadhaar Details</h3>
-                      <span className="text-xs text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded">Optional</span>
-                    </div>
-                    <p className="text-xs text-slate-500 mb-3">Provide your Aadhaar details for document verification (optional).</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Aadhaar Number <span className="text-slate-400 font-normal">(Optional)</span>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        Full Name <span className="text-rose-500">*</span>
                       </label>
+                      <div className="relative">
+                        <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="Your legal full name"
+                          className="pl-10 h-11 rounded-xl bg-white border-slate-200 text-sm focus:border-orange-500"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        Phone Number
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="+91 98765 43210"
+                          className="pl-10 h-11 rounded-xl bg-white border-slate-200 text-sm focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        value={user?.email || ""}
+                        disabled
+                        className="pl-10 h-11 rounded-xl bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed text-sm"
+                      />
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      Email address is your primary account identifier and cannot be changed directly.
+                    </p>
+                  </div>
+
+                  {/* Document Verification Box */}
+                  <div className="p-5 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-orange-600" />
+                        <h3 className="text-sm font-bold text-slate-900">
+                          Document Verification: Aadhaar Details
+                        </h3>
+                      </div>
+                      <span className="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full w-fit">
+                        Optional
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Provide your 12-digit Aadhaar number for seamless passenger verification and outstation intercity toll compliance.
+                    </p>
+                    <div>
                       <Input
                         value={aadhar}
                         onChange={(e) => setAadhar(e.target.value)}
                         placeholder="e.g. 12-digit Aadhaar Number (XXXX-XXXX-XXXX)"
                         maxLength={16}
+                        className="h-11 rounded-xl bg-white border-slate-200 text-sm focus:border-orange-500"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-3">
-                    <Button type="submit" className="gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md shadow-orange-500/20" disabled={saving}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                    <Button
+                      type="submit"
+                      disabled={saving}
+                      className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md shadow-orange-500/20 gap-2 h-11 px-6 text-sm"
+                    >
                       <Save className="h-4 w-4" />
-                      {saving ? "Saving…" : "Save Changes"}
+                      {saving ? "Saving Changes..." : "Save Changes"}
                     </Button>
+
                     {saved && (
-                      <p className="text-sm text-emerald-600 font-semibold flex items-center gap-1.5">
-                        <CheckCircle2 className="h-4 w-4" /> Profile updated successfully
-                      </p>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl animate-in fade-in">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Profile updated successfully!
+                      </span>
                     )}
                   </div>
                 </form>
               )}
 
               {activeTab === "security" && (
-                <form onSubmit={handleChangePassword} className="p-6 space-y-5">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900 mb-1">Security & Authentication</h2>
-                    <p className="text-sm text-slate-500">Manage your account password and security credentials</p>
+                <form onSubmit={handleChangePassword} className="p-6 sm:p-8 space-y-6">
+                  <div className="border-b border-slate-100 pb-4">
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                      Security & Password
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Update your account password and safeguard your login credentials.
+                    </p>
                   </div>
 
                   {pwStatus && (
-                    <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                      pwStatus.includes("success") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"
-                    }`}>
-                      {pwStatus.includes("success") ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-red-600" />}
+                    <div
+                      className={`p-3.5 rounded-xl text-xs flex items-center gap-2.5 ${
+                        pwStatus.includes("success")
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-rose-50 text-rose-700 border border-rose-200"
+                      }`}
+                    >
+                      {pwStatus.includes("success") ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                      )}
                       <span>{pwStatus}</span>
                     </div>
                   )}
 
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-w-xl">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Current Password</label>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        Current Password <span className="text-rose-500">*</span>
+                      </label>
                       <Input
                         type="password"
-                        placeholder="••••••••"
+                        placeholder="Enter your current password"
                         value={oldPassword}
                         onChange={(e) => setOldPassword(e.target.value)}
+                        className="h-11 rounded-xl bg-white border-slate-200 text-sm focus:border-orange-500"
                         required
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">New Password (min 8 characters)</label>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                      />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          New Password <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          type="password"
+                          placeholder="Min 8 characters"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="h-11 rounded-xl bg-white border-slate-200 text-sm focus:border-orange-500"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          Confirm New Password <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          type="password"
+                          placeholder="Re-enter new password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="h-11 rounded-xl bg-white border-slate-200 text-sm focus:border-orange-500"
+                          required
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Confirm New Password</label>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                      />
+
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs text-slate-600">
+                      <p className="font-bold text-slate-800">Password Requirements:</p>
+                      <ul className="list-disc pl-4 space-y-0.5 text-slate-500">
+                        <li>Must be at least 8 characters long</li>
+                        <li>Must match in both new password fields</li>
+                      </ul>
                     </div>
-                    <Button type="submit" className="gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md shadow-orange-500/20" disabled={pwLoading}>
-                      <Lock className="h-4 w-4" /> {pwLoading ? "Updating…" : "Update Password"}
-                    </Button>
+
+                    <div className="pt-2">
+                      <Button
+                        type="submit"
+                        disabled={pwLoading}
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md shadow-orange-500/20 gap-2 h-11 px-6 text-sm"
+                      >
+                        <Lock className="h-4 w-4" />
+                        {pwLoading ? "Updating Password..." : "Update Password"}
+                      </Button>
+                    </div>
                   </div>
                 </form>
-              )}
-
-              {activeTab === "notifications" && (
-                <div className="p-6 space-y-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900 mb-1">Notification Preferences</h2>
-                    <p className="text-sm text-slate-500">Choose how you want to be notified</p>
-                  </div>
-                  {[
-                    { label: "Booking Confirmations", desc: "Receive confirmation when a booking is made", enabled: true },
-                    { label: "Booking Reminders", desc: "Reminders 24h before pickup", enabled: true },
-                    { label: "Promotional Offers", desc: "Deals, discounts, and special offers", enabled: false },
-                    { label: "Account Updates", desc: "Security alerts and account changes", enabled: true },
-                  ].map(({ label, desc, enabled }) => (
-                    <div key={label} className="flex items-start justify-between py-3 border-b border-slate-100 last:border-0">
-                      <div>
-                        <p className="font-semibold text-slate-800 text-sm">{label}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
-                        <input type="checkbox" defaultChecked={enabled} className="sr-only peer" />
-                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeTab === "payment" && (
-                <div className="p-6 space-y-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900 mb-1">Payment Methods</h2>
-                    <p className="text-sm text-slate-500">Manage your saved cards and billing info</p>
-                  </div>
-                  <div className="border border-slate-200 rounded-xl p-4 flex items-center gap-4">
-                    <div className="h-10 w-14 rounded-lg bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-bold shadow">
-                      VISA
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-800">•••• •••• •••• 4242</p>
-                      <p className="text-xs text-slate-500">Expires 09/27</p>
-                    </div>
-                    <Badge variant="success" className="ml-auto">Default</Badge>
-                  </div>
-                  <Button variant="outline" className="gap-2 w-full">
-                    <CreditCard className="h-4 w-4" /> Add New Card
-                  </Button>
-                </div>
               )}
             </div>
           </div>
