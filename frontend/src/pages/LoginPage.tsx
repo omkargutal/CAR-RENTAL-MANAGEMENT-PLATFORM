@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2, Lock, Mail, KeyRound } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2, Lock, Mail, KeyRound, Plane, MapPin, Car, CarFront } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
@@ -62,25 +62,18 @@ export function LoginPage() {
       return;
     }
 
-    // 2. Submit credentials
     setLoading(true);
     try {
-      const loggedInUser = await login(email.trim(), password);
-      const role = (loggedInUser.role || "").toUpperCase();
-      if (role === "ADMIN") {
-        navigate("/admin");
-      } else {
-        navigate(fromLocation);
-      }
+      await login(email.trim(), password);
+      navigate(fromLocation, { replace: true });
     } catch (err: unknown) {
-      const userFriendlyMessage = formatAuthError(err, "Incorrect email or password.");
-      setGeneralError(userFriendlyMessage);
+      const formatted = formatAuthError(err, "Incorrect email or password.");
+      setGeneralError(formatted);
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 1: Request password reset instructions
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotErrorMessage(null);
@@ -101,20 +94,19 @@ export function LoginPage() {
       }
       setForgotStep("reset");
     } catch (err: unknown) {
-      setForgotErrorMessage(formatAuthError(err, "Unable to send reset instructions. Please try again."));
+      setForgotErrorMessage(formatAuthError(err, "Failed to request password reset."));
     } finally {
       setForgotLoading(false);
     }
   };
 
-  // Step 2: Confirm new password using the reset token
   const handleConfirmReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotErrorMessage(null);
     setForgotSuccessMessage(null);
 
     if (!resetToken.trim()) {
-      setForgotErrorMessage("Please enter the reset token or verification code.");
+      setForgotErrorMessage("Please enter the reset token.");
       return;
     }
 
@@ -150,21 +142,57 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-white relative overflow-hidden">
+      {/* Background with Ambient Glows matching Home Section */}
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-30 pointer-events-none"
+        style={{ backgroundImage: "url('/assets/auth/airport-innova-auth.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-slate-950 pointer-events-none" />
+      <div className="hero-glow w-96 h-96 bg-blue-600 -top-20 -left-20 opacity-20 pointer-events-none absolute" />
+      <div className="hero-glow w-80 h-80 bg-amber-500 bottom-10 left-1/3 opacity-15 pointer-events-none absolute" />
+
       {/* Top Mobile/Tablet Navigation Bar */}
       <AuthHeader currentView="login" />
 
       {/* Main Container: Split-screen desktop, focused mobile */}
-      <div className="flex-1 grid lg:grid-cols-2">
-        {/* Left: Form View */}
-        <div className="flex flex-col justify-center px-4 py-8 sm:px-8 sm:py-12 lg:px-14 xl:px-20 bg-white">
-          <div className="max-w-md w-full mx-auto">
+      <div className="flex-1 grid lg:grid-cols-2 relative z-10">
+        {/* Left: Form View in Frosted Glassmorphic Card */}
+        <div className="flex flex-col justify-center items-center px-4 py-8 sm:px-8 sm:py-12 lg:px-14 xl:px-20">
+          <div className="max-w-md w-full mx-auto bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl">
+            {/* Mobile Banner: "Your Trusted Daily Commute Partner in Pune & Mumbai" */}
+            <div className="lg:hidden mb-6 pb-4 border-b border-white/10 text-center">
+              <span className="text-[10px] font-extrabold tracking-widest uppercase text-slate-300 block drop-shadow">
+                Your Trusted Daily Commute Partner
+              </span>
+              <h2 className="text-lg font-black uppercase tracking-tight text-amber-400 mt-0.5 drop-shadow">
+                In Pune & Mumbai
+              </h2>
+              <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-white/90 mt-2.5 uppercase flex-wrap">
+                <span className="inline-flex items-center gap-1">
+                  <Plane className="h-3 w-3 text-amber-400" /> Airport Transfer
+                </span>
+                <span className="text-white/30">•</span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-amber-400" /> Outstation
+                </span>
+                <span className="text-white/30">•</span>
+                <span className="inline-flex items-center gap-1">
+                  <Car className="h-3 w-3 text-amber-400" /> One Way
+                </span>
+                <span className="text-white/30">•</span>
+                <span className="inline-flex items-center gap-1">
+                  <CarFront className="h-3 w-3 text-amber-400" /> Local Taxi
+                </span>
+              </div>
+            </div>
+
             {/* Page Headings */}
-            <div className="mb-6 sm:mb-8">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="mb-6 sm:mb-8 text-center sm:text-left">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 {showForgot ? "Reset Password" : "Welcome Back"}
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-slate-400 mt-1">
                 {showForgot
                   ? "Follow the steps below to securely recover your account."
                   : "Sign in to continue your journey."}
@@ -175,9 +203,9 @@ export function LoginPage() {
             {generalError && (
               <div
                 role="alert"
-                className="mb-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start gap-3 text-sm animate-in fade-in duration-200"
+                className="mb-6 p-3.5 rounded-xl bg-red-950/60 border border-red-500/40 text-red-200 flex items-start gap-3 text-sm animate-in fade-in duration-200"
               >
-                <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
                 <p className="text-xs sm:text-sm font-medium">{generalError}</p>
               </div>
             )}
@@ -189,9 +217,9 @@ export function LoginPage() {
                 <div>
                   <label
                     htmlFor="login-email"
-                    className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1"
+                    className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1"
                   >
-                    Email Address <span className="text-red-500">*</span>
+                    Email Address <span className="text-amber-400">*</span>
                   </label>
                   <div className="relative">
                     <Input
@@ -205,27 +233,27 @@ export function LoginPage() {
                       }}
                       required
                       autoComplete="email"
-                      className={`h-11 sm:h-12 text-sm pl-10 rounded-xl transition-all ${
+                      className={`h-11 sm:h-12 text-sm pl-10 rounded-xl bg-slate-950/60 text-white placeholder:text-slate-500 transition-all ${
                         fieldErrors.email
-                          ? "border-red-400 focus-visible:ring-red-400"
-                          : "border-slate-200 focus-visible:ring-amber-500"
+                          ? "border-red-500 focus-visible:ring-red-400"
+                          : "border-slate-700/80 focus-visible:ring-amber-500"
                       }`}
                     />
                     <Mail className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                   {fieldErrors.email && (
-                    <p className="text-xs text-red-600 mt-1 font-medium">{fieldErrors.email}</p>
+                    <p className="text-xs text-red-400 mt-1 font-medium">{fieldErrors.email}</p>
                   )}
                 </div>
 
-                {/* Password */}
+                {/* Password with Show/Hide Toggle & Forgot Password Link */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label
                       htmlFor="login-password"
-                      className="text-xs sm:text-sm font-semibold text-slate-700"
+                      className="block text-xs sm:text-sm font-semibold text-slate-200"
                     >
-                      Password <span className="text-red-500">*</span>
+                      Password <span className="text-amber-400">*</span>
                     </label>
                     <button
                       type="button"
@@ -235,7 +263,7 @@ export function LoginPage() {
                         setForgotEmail(email);
                         setGeneralError(null);
                       }}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                      className="text-xs text-amber-400 hover:text-amber-300 font-semibold transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -252,10 +280,10 @@ export function LoginPage() {
                       }}
                       required
                       autoComplete="current-password"
-                      className={`h-11 sm:h-12 text-sm pl-10 pr-10 rounded-xl transition-all ${
+                      className={`h-11 sm:h-12 text-sm pl-10 pr-10 rounded-xl bg-slate-950/60 text-white placeholder:text-slate-500 transition-all ${
                         fieldErrors.password
-                          ? "border-red-400 focus-visible:ring-red-400"
-                          : "border-slate-200 focus-visible:ring-amber-500"
+                          ? "border-red-500 focus-visible:ring-red-400"
+                          : "border-slate-700/80 focus-visible:ring-amber-500"
                       }`}
                     />
                     <Lock className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -263,13 +291,13 @@ export function LoginPage() {
                       type="button"
                       onClick={() => setShowPw(!showPw)}
                       aria-label={showPw ? "Hide password" : "Show password"}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
                     >
                       {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {fieldErrors.password && (
-                    <p className="text-xs text-red-600 mt-1 font-medium">{fieldErrors.password}</p>
+                    <p className="text-xs text-red-400 mt-1 font-medium">{fieldErrors.password}</p>
                   )}
                 </div>
 
@@ -278,7 +306,7 @@ export function LoginPage() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-11 sm:h-12 text-base font-bold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+                    className="w-full h-11 sm:h-12 text-base font-bold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
@@ -297,15 +325,15 @@ export function LoginPage() {
               /* Forgot Password Flow */
               <div className="space-y-4">
                 {forgotSuccessMessage && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-start gap-2.5">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 text-xs sm:text-sm flex items-start gap-2.5">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
                     <span>{forgotSuccessMessage}</span>
                   </div>
                 )}
 
                 {forgotErrorMessage && (
-                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-start gap-2.5">
-                    <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                  <div className="p-3.5 rounded-xl bg-red-950/60 border border-red-500/40 text-red-200 text-xs sm:text-sm flex items-start gap-2.5">
+                    <AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
                     <span>{forgotErrorMessage}</span>
                   </div>
                 )}
@@ -313,8 +341,8 @@ export function LoginPage() {
                 {forgotStep === "request" ? (
                   <form onSubmit={handleRequestReset} className="space-y-4">
                     <div>
-                      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">
-                        Registered Email Address <span className="text-red-500">*</span>
+                      <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1">
+                        Registered Email Address <span className="text-amber-400">*</span>
                       </label>
                       <Input
                         type="email"
@@ -322,7 +350,7 @@ export function LoginPage() {
                         placeholder="you@example.com"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        className="h-11 sm:h-12 rounded-xl"
+                        className="h-11 sm:h-12 rounded-xl bg-slate-950/60 border-slate-700 text-white placeholder:text-slate-500"
                       />
                     </div>
 
@@ -331,7 +359,7 @@ export function LoginPage() {
                         type="button"
                         variant="outline"
                         onClick={() => setShowForgot(false)}
-                        className="flex-1 h-11 rounded-xl"
+                        className="flex-1 h-11 rounded-xl border-slate-700 text-slate-300 hover:bg-slate-800"
                       >
                         Back to Login
                       </Button>
@@ -347,8 +375,8 @@ export function LoginPage() {
                 ) : (
                   <form onSubmit={handleConfirmReset} className="space-y-3.5">
                     <div>
-                      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">
-                        Reset Token / Verification Code <span className="text-red-500">*</span>
+                      <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1">
+                        Reset Token / Verification Code <span className="text-amber-400">*</span>
                       </label>
                       <div className="relative">
                         <Input
@@ -357,15 +385,15 @@ export function LoginPage() {
                           placeholder="Paste reset token here"
                           value={resetToken}
                           onChange={(e) => setResetToken(e.target.value)}
-                          className="h-11 rounded-xl font-mono text-xs pl-9"
+                          className="h-11 rounded-xl font-mono text-xs pl-9 bg-slate-950/60 border-slate-700 text-white"
                         />
                         <KeyRound className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">
-                        New Password (Min 8 characters) <span className="text-red-500">*</span>
+                      <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1">
+                        New Password (Min 8 characters) <span className="text-amber-400">*</span>
                       </label>
                       <div className="relative">
                         <Input
@@ -374,12 +402,12 @@ export function LoginPage() {
                           placeholder="••••••••"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="h-11 rounded-xl pr-10"
+                          className="h-11 rounded-xl pr-10 bg-slate-950/60 border-slate-700 text-white"
                         />
                         <button
                           type="button"
                           onClick={() => setShowNewPw(!showNewPw)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                         >
                           {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -387,8 +415,8 @@ export function LoginPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">
-                        Confirm New Password <span className="text-red-500">*</span>
+                      <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1">
+                        Confirm New Password <span className="text-amber-400">*</span>
                       </label>
                       <Input
                         type="password"
@@ -396,7 +424,7 @@ export function LoginPage() {
                         placeholder="••••••••"
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        className="h-11 rounded-xl"
+                        className="h-11 rounded-xl bg-slate-950/60 border-slate-700 text-white"
                       />
                     </div>
 
@@ -408,7 +436,7 @@ export function LoginPage() {
                           setShowForgot(false);
                           setForgotStep("request");
                         }}
-                        className="flex-1 h-11 rounded-xl"
+                        className="flex-1 h-11 rounded-xl border-slate-700 text-slate-300 hover:bg-slate-800"
                       >
                         Cancel
                       </Button>
@@ -426,12 +454,12 @@ export function LoginPage() {
             )}
 
             {/* Registration Link Below Form */}
-            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-              <p className="text-sm text-slate-600">
+            <div className="mt-8 pt-6 border-t border-white/10 text-center">
+              <p className="text-sm text-slate-400">
                 Don't have an account?{" "}
                 <Link
                   to="/register"
-                  className="font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors"
+                  className="font-bold text-amber-400 hover:text-amber-300 hover:underline transition-colors"
                 >
                   Create Account
                 </Link>
@@ -440,7 +468,7 @@ export function LoginPage() {
           </div>
         </div>
 
-        {/* Right: Desktop Visual Side with New Toyota Innova Airport Image */}
+        {/* Right: Desktop Visual Side with Toyota Innova Airport Image & Commute Partner Banner */}
         <AuthVisualSide />
       </div>
     </div>
