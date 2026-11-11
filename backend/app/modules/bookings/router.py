@@ -24,11 +24,21 @@ from app.modules.bookings.schemas import (
     BookingStatusUpdate,
     BookingUpdate,
     BookingVehicleSummary,
+    CustomerStatsResponse,
 )
 from app.modules.bookings.service import BookingService
 from app.modules.users.models import User
 
 router = APIRouter(prefix="/bookings", tags=["Bookings & Vehicle Availability"])
+
+
+def mask_gov_id(val: Optional[str]) -> Optional[str]:
+    if not val:
+        return None
+    cleaned = val.replace(" ", "").replace("-", "")
+    if len(cleaned) <= 4:
+        return "••••"
+    return f"••••-••••-{cleaned[-4:]}"
 
 
 def serialize_booking(b: Booking) -> BookingRead:
@@ -78,8 +88,9 @@ def serialize_booking(b: Booking) -> BookingRead:
         customer_name=b.customer_name,
         customer_email=b.customer_email,
         customer_phone=b.customer_phone,
-        driver_license_number=b.driver_license_number,
+        driver_license_number=mask_gov_id(b.driver_license_number),
         currency=b.currency or "INR",
+
         daily_rate_cents=b.daily_rate_cents,
         daily_rate=Decimal(b.daily_rate_cents or 0) / Decimal(100) if b.daily_rate_cents else b.daily_rate,
         base_amount_cents=b.base_amount_cents,
@@ -163,7 +174,29 @@ async def create_booking(
             payload.customer_phone = current_user.phone_number
 
     booking = await service.create_booking(payload)
+
+    # In-app notification for the customer
+    try:
+        from app.modules.notifications.models import Notification, NotificationChannel, NotificationStatus
+        recipient = booking.customer_email or (current_user.email if current_user else None)
+        if recipient:
+            notif = Notification(
+                recipient=recipient,
+                channel=NotificationChannel.IN_APP,
+                subject=f"Trip Booking Initiated: {booking.booking_reference}",
+                message=f"Your cab booking ({booking.booking_reference}) has been created for {booking.start_datetime.strftime('%d %b %Y, %I:%M %p')}. Complete payment to confirm.",
+                link_url=f"/bookings?ref={booking.booking_reference}",
+                is_read=False,
+                status=NotificationStatus.SENT,
+            )
+            service.booking_repo.db.add(notif)
+            await service.booking_repo.db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(f"Could not persist booking creation notification: {exc}")
+
     return ResponseEnvelope(data=serialize_booking(booking))
+
 
 
 @router.get("/reference/{reference}", response_model=ResponseEnvelope[BookingRead])
@@ -176,6 +209,16 @@ async def track_booking_by_reference(
     return ResponseEnvelope(data=serialize_booking(booking))
 
 
+@router.get("/my-stats", response_model=ResponseEnvelope[CustomerStatsResponse])
+async def get_my_booking_stats(
+    current_user: User = Depends(get_current_user),
+    service: BookingService = Depends(get_booking_service),
+):
+    """Calculates authoritative, dynamic customer KPI statistics."""
+    stats = await service.get_customer_stats(current_user)
+    return ResponseEnvelope(data=stats)
+
+
 @router.get("/my-bookings", response_model=ResponseEnvelope[List[BookingRead]])
 async def list_my_bookings(
     skip: int = Query(0, ge=0),
@@ -185,14 +228,9 @@ async def list_my_bookings(
 ):
     """Lists bookings for the authenticated customer."""
     customer_id = current_user.customer.id if getattr(current_user, "customer", None) else None
-    if not customer_id:
-        # If user has no customer record, search by email
-        bookings = await service.list(skip=skip, limit=limit)
-        user_bookings = [b for b in bookings if b.customer_email == current_user.email]
-        return ResponseEnvelope(data=[serialize_booking(b) for b in user_bookings])
-
-    bookings = await service.booking_repo.list_by_customer(customer_id, skip=skip, limit=limit)
+    bookings = await service.booking_repo.list_for_user(customer_id, current_user.email, skip=skip, limit=limit)
     return ResponseEnvelope(data=[serialize_booking(b) for b in bookings])
+
 
 
 @router.get("/{booking_id}", response_model=ResponseEnvelope[BookingRead])

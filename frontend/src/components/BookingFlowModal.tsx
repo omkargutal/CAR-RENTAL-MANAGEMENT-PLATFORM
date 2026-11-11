@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 import {
   bookingsApi,
   locationsApi,
+  authApi,
   Location,
   Vehicle,
   BookingQuoteResponse,
   Booking,
 } from "@/core/api";
+
 import { useAuth } from "@/context/AuthContext";
 import { PaymentModal } from "./PaymentModal";
 import { getVehicleSeatingLabel } from "@/utils/vehicleSorting";
@@ -85,11 +87,29 @@ export function BookingFlowModal({
   const [customerPhone, setCustomerPhone] = useState<string>(user?.phone_number || "");
   const [aadhaarNumber, setAadhaarNumber] = useState<string>("");
 
+  // Customer Identity & Existing Account Verification
+  const [existingAccountFound, setExistingAccountFound] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  const handleEmailBlur = async () => {
+    if (!customerEmail || !customerEmail.includes("@") || user) return;
+    setCheckingEmail(true);
+    try {
+      const res = await authApi.checkEmail(customerEmail.trim().toLowerCase());
+      setExistingAccountFound(res.exists);
+    } catch {
+      // Non-blocking
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
   // Submission & Confirmation State
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
 
   // Load locations on open
   useEffect(() => {
@@ -167,13 +187,14 @@ export function BookingFlowModal({
 
   // Submit booking with idempotency key
   const handleSubmitBooking = async () => {
-    if (!customerName || !customerEmail || !aadhaarNumber) {
-      setSubmitError("Please fill in your full name, email, and Aadhaar / Govt ID number.");
+    if (!customerName.trim() || !customerEmail.trim() || !customerPhone.trim()) {
+      setSubmitError("Please fill in your full name, email address, and mobile number.");
       return;
     }
 
     setSubmitting(true);
     setSubmitError(null);
+
 
     // Generate unique client idempotency key
     const idempotencyKey = `IDEMP-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -412,7 +433,7 @@ export function BookingFlowModal({
               {/* Customer Information */}
               <div className="space-y-4">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <UserIcon className="h-4 w-4 text-blue-600" /> Customer & Passenger Details
+                  <UserIcon className="h-4 w-4 text-orange-600" /> Customer & Passenger Details
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -427,15 +448,41 @@ export function BookingFlowModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">Email Address *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-600">Email Address *</label>
+                      {checkingEmail && <span className="text-[10px] text-orange-600 font-semibold animate-pulse">Checking account...</span>}
+                    </div>
                     <Input
                       type="email"
                       placeholder="rahul@example.com"
                       value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      onChange={(e) => {
+                        setCustomerEmail(e.target.value);
+                        setExistingAccountFound(false);
+                      }}
+                      onBlur={handleEmailBlur}
                       className="h-10 rounded-xl text-sm"
                     />
                   </div>
+
+                  {existingAccountFound && !user && (
+                    <div className="md:col-span-2 p-3 bg-orange-50 border border-orange-200 rounded-xl flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 text-slate-800">
+                        <UserIcon className="h-4 w-4 text-orange-600 shrink-0" />
+                        <span>
+                          Account exists with this email! You can sign in to associate your booking history, or proceed directly.
+                        </span>
+                      </div>
+                      <a
+                        href="/login"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 text-orange-600 font-bold hover:underline"
+                      >
+                        Sign In
+                      </a>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Mobile Number (for SMS & Driver WhatsApp) *</label>
@@ -448,13 +495,18 @@ export function BookingFlowModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">Customer Aadhaar / Govt ID (for Verification) *</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                      Customer Aadhaar / Govt ID (Optional)
+                    </label>
                     <Input
-                      placeholder="Enter 12-digit Aadhaar / Govt ID number"
+                      placeholder="12-digit Aadhaar / Govt ID (optional)"
                       value={aadhaarNumber}
                       onChange={(e) => setAadhaarNumber(e.target.value)}
                       className="h-10 rounded-xl text-sm font-mono"
                     />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Optional under Indian data protection guidelines. Handled securely.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -464,10 +516,10 @@ export function BookingFlowModal({
                   <ArrowLeft className="h-4 w-4 mr-1" /> Adjust Route & Dates
                 </Button>
                 <Button
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-500/20"
                   onClick={() => {
-                    if (!customerName || !customerEmail || !aadhaarNumber) {
-                      alert("Please provide full name, email, and 12-digit Aadhaar / Govt ID number.");
+                    if (!customerName.trim() || !customerEmail.trim() || !customerPhone.trim()) {
+                      alert("Please provide full name, email address, and mobile number.");
                       return;
                     }
                     setCurrentStep(3); // Step 3: Review
@@ -479,11 +531,12 @@ export function BookingFlowModal({
             </div>
           )}
 
+
           {/* STEP 3: Review Booking & Final Confirmation */}
           {currentStep === 3 && (
             <div className="space-y-6">
               <div>
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Review Booking</span>
+                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Review Booking</span>
                 <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">Confirm Your Journey Reservation</h3>
                 <p className="text-xs text-slate-500">Please verify your journey details before confirmation.</p>
               </div>
@@ -502,12 +555,12 @@ export function BookingFlowModal({
                   <div>
                     <span className="text-slate-400 font-semibold uppercase">Pickup Details</span>
                     <p className="font-bold text-slate-800 text-sm mt-0.5">{pickupAddress || "Not specified"}</p>
-                    <p className="text-blue-600 font-medium mt-1">{new Date(pickupDateTime).toLocaleString()}</p>
+                    <p className="text-orange-600 font-medium mt-1">{new Date(pickupDateTime).toLocaleString()}</p>
                   </div>
                   <div>
                     <span className="text-slate-400 font-semibold uppercase">Drop-off Details</span>
                     <p className="font-bold text-slate-800 text-sm mt-0.5">{dropAddress || "Not specified"}</p>
-                    <p className="text-blue-600 font-medium mt-1">{new Date(returnDateTime).toLocaleString()}</p>
+                    <p className="text-orange-600 font-medium mt-1">{new Date(returnDateTime).toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -519,13 +572,17 @@ export function BookingFlowModal({
                   </div>
                   <div>
                     <span className="text-slate-400 font-semibold uppercase">Govt ID Verification</span>
-                    <p className="font-bold text-slate-800 mt-0.5 font-mono">{aadhaarNumber}</p>
+                    <p className="font-bold text-slate-800 mt-0.5 font-mono">
+                      {aadhaarNumber.trim()
+                        ? `•••• •••• ${aadhaarNumber.replace(/\D/g, "").slice(-4)}`
+                        : "Optional / Skipped"}
+                    </p>
                   </div>
                 </div>
 
                 <div className="p-3 bg-white rounded-xl border border-slate-200 flex justify-between items-center text-sm">
                   <span className="font-bold text-slate-700">Trip Fare ({effectiveKm} km × ₹{perKmRate}/km):</span>
-                  <span className="text-xl font-black text-blue-600">₹{formatCurrency(finalTotalFare)}</span>
+                  <span className="text-xl font-black text-orange-600">₹{formatCurrency(finalTotalFare)}</span>
                 </div>
               </div>
 
@@ -542,7 +599,7 @@ export function BookingFlowModal({
                 </Button>
                 <Button
                   id="btn-submit-booking"
-                  className="flex-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 gap-2 h-11"
+                  className="flex-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 gap-2 h-11"
                   onClick={handleSubmitBooking}
                   disabled={submitting}
                 >
@@ -580,14 +637,14 @@ export function BookingFlowModal({
               <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl max-w-md mx-auto text-left space-y-3">
                 <div className="flex justify-between items-center border-b border-slate-200 pb-2">
                   <span className="text-xs font-bold text-slate-500 uppercase">Booking Reference</span>
-                  <span className="font-mono text-base font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                  <span className="font-mono text-base font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
                     {confirmedBooking.booking_reference}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-500">Trip Status:</span>
-                  <Badge variant="default" className="font-bold">
+                  <Badge variant="default" className="font-bold bg-emerald-600 text-white">
                     {confirmedBooking.status}
                   </Badge>
                 </div>
@@ -617,7 +674,7 @@ export function BookingFlowModal({
                   View My Bookings
                 </Button>
                 <Button
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex-1 text-xs"
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl flex-1 text-xs shadow-lg shadow-orange-500/20"
                   onClick={() => {
                     setShowPaymentModal(true);
                   }}
@@ -627,6 +684,7 @@ export function BookingFlowModal({
               </div>
             </div>
           )}
+
 
         </div>
       </div>

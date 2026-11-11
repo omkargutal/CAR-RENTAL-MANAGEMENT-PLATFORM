@@ -231,3 +231,17 @@ async def revoke_session(
 ):
     revoked = await service.revoke_session(session_id, current_user.id)
     return ResponseEnvelope(data=ActionResponse(message="Session revoked." if revoked else "Session not found."))
+
+
+@router.post("/check-email", response_model=ResponseEnvelope[dict])
+async def check_email_exists(
+    payload: ForgotPasswordRequest,
+    user_service: UserService = Depends(get_user_service),
+):
+    """
+    Checks if an account exists for this email without exposing any personal information.
+    Fulfills customer identification during booking checkout without credential leaks.
+    """
+    user = await user_service.get_by_email(payload.email.strip().lower())
+    return ResponseEnvelope(data={"exists": user is not None, "email": payload.email.strip().lower()})
+
