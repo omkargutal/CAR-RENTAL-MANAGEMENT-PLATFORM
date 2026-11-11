@@ -166,11 +166,22 @@ export const authApi = {
     driver_license_state?: string;
     driver_license_country?: string;
     driver_license_expiry?: string;
+    aadhar_number?: string;
+    avatar_url?: string;
     document_urls?: string[];
   }): Promise<User> {
     return apiRequest<User>("/api/v1/auth/documents", {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  },
+
+  async uploadAvatar(file: File): Promise<User> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiRequest<User>("/api/v1/auth/avatar", {
+      method: "POST",
+      body: formData,
     });
   },
 

@@ -13,15 +13,17 @@ import { SafetyGuidelinesPage } from "@/pages/SafetyGuidelinesPage";
 import { CancellationPolicyPage } from "@/pages/CancellationPolicyPage";
 import { TermsAndConditionsPage } from "@/pages/TermsAndConditionsPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { AdminLoginPage } from "@/pages/AdminLoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { BookingsPage } from "@/pages/BookingsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 
 // Pages that use full-bleed layouts (no standard public navbar/footer)
-const FULLSCREEN_ROUTES = ["/login", "/register", "/admin"];
+const FULLSCREEN_ROUTES = ["/login", "/register", "/admin", "/reset-password"];
 
 function AppLayout() {
   const location = useLocation();
@@ -31,7 +33,8 @@ function AppLayout() {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/admin/*"

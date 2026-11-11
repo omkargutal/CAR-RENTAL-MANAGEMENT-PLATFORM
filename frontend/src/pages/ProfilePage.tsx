@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Camera, Save, User as UserIcon, Lock, Bell, CreditCard, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Save, User as UserIcon, Lock, Bell, CreditCard, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ const TABS = [
 ];
 
 export function ProfilePage() {
-  const { user, updateProfile, updateDocuments } = useAuth();
+  const { user, updateProfile, updateDocuments, uploadAvatar } = useAuth();
   const [activeTab, setActiveTab] = useState("personal");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -23,9 +23,12 @@ export function ProfilePage() {
   // Profile form
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [license, setLicense] = useState("");
-  const [licenseState, setLicenseState] = useState("");
-  const [licenseExpiry, setLicenseExpiry] = useState("");
+  const [aadhar, setAadhar] = useState("");
+
+  // Avatar upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Password change form
   const [oldPassword, setOldPassword] = useState("");
@@ -39,11 +42,57 @@ export function ProfilePage() {
       setFullName(user.full_name || "");
       setPhone(user.phone_number || "");
       const docs = (user.documents || {}) as Record<string, string>;
-      setLicense(docs.driver_license_number || "");
-      setLicenseState(docs.driver_license_state || "");
-      setLicenseExpiry(docs.driver_license_expiry || "");
+      setAadhar(docs.aadhar_number || "");
     }
   }, [user]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarMsg({ type: "error", text: "Please select an image file (PNG, JPG, WebP)." });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMsg({ type: "error", text: "Image size must be less than 5MB." });
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarMsg(null);
+
+    try {
+      if (uploadAvatar) {
+        await uploadAvatar(file);
+      }
+      setAvatarMsg({ type: "success", text: "Profile photo updated!" });
+    } catch {
+      // Graceful fallback to client-side data URL storage via updateDocuments
+      try {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const dataUrl = event.target?.result as string;
+          if (dataUrl) {
+            await updateDocuments({ avatar_url: dataUrl, aadhar_number: aadhar });
+            setAvatarMsg({ type: "success", text: "Profile photo updated!" });
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch {
+        setAvatarMsg({ type: "error", text: "Failed to upload photo. Please try again." });
+      }
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setTimeout(() => setAvatarMsg(null), 3500);
+    }
+  };
 
   const handleSavePersonal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,9 +104,7 @@ export function ProfilePage() {
         phone_number: phone,
       });
       await updateDocuments({
-        driver_license_number: license,
-        driver_license_state: licenseState,
-        driver_license_expiry: licenseExpiry,
+        aadhar_number: aadhar,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -106,12 +153,15 @@ export function ProfilePage() {
         .toUpperCase()
     : "U";
 
+  const docs = (user?.documents || {}) as Record<string, string>;
+  const avatarUrl = docs.avatar_url;
+
   return (
     <div className="min-h-screen bg-slate-50 pt-16">
       <div className="bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
           <h1 className="text-3xl font-extrabold text-slate-900">My Profile</h1>
-          <p className="text-slate-500 mt-1">Manage your verified customer account, documents, and credentials</p>
+          <p className="text-slate-500 mt-1">Manage your personal account details, documents, and credentials</p>
         </div>
       </div>
 
@@ -119,27 +169,61 @@ export function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Panel */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Avatar */}
+            {/* Avatar & User Details */}
             <div className="bg-white rounded-2xl border border-slate-100 p-5 text-center shadow-sm">
-              <div className="relative inline-block mb-3">
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-blue-500/30 mx-auto">
-                  {initials}
-                </div>
+              <div className="relative inline-block mb-3 group">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                  accept="image/png, image/jpeg, image/webp"
+                  className="hidden"
+                />
                 <button
                   type="button"
-                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-white hover:bg-blue-700 transition-colors"
+                  onClick={handleAvatarClick}
+                  className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-orange-500/30 mx-auto overflow-hidden cursor-pointer relative group-hover:ring-4 group-hover:ring-orange-300 transition-all block focus:outline-none focus:ring-4 focus:ring-orange-400"
+                  title="Click to update profile photo"
+                  aria-label="Click to update profile photo"
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={user?.full_name || "Profile"} className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{initials}</span>
+                  )}
+                  {/* Subtle hover overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[10px] font-bold text-white">
+                    <Camera className="h-4 w-4 mb-0.5" />
+                    <span>Change</span>
+                  </div>
+                  {avatarUploading && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  aria-label="Upload profile photo"
+                  title="Upload profile photo"
+                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-orange-500 border-2 border-white flex items-center justify-center text-white hover:bg-orange-600 active:scale-95 transition-all shadow-sm cursor-pointer"
                 >
                   <Camera className="h-3.5 w-3.5" />
                 </button>
               </div>
+
+              {avatarMsg && (
+                <p className={`text-[11px] font-semibold mb-2 ${avatarMsg.type === "success" ? "text-emerald-600" : "text-red-500"}`}>
+                  {avatarMsg.text}
+                </p>
+              )}
+
               <p className="font-bold text-slate-900">{user?.full_name || "Guest"}</p>
               <p className="text-xs text-slate-500 mb-2">{user?.email}</p>
               <div className="flex justify-center gap-1.5 flex-wrap">
                 <Badge variant={user?.role === "ADMIN" ? "gold" : "default"}>
                   {user?.role || "CUSTOMER"}
-                </Badge>
-                <Badge variant={user?.is_verified ? "success" : "secondary"}>
-                  {user?.is_verified ? "Verified" : "Unverified"}
                 </Badge>
               </div>
               <div className="mt-3 text-xs text-slate-400">
@@ -153,8 +237,8 @@ export function ProfilePage() {
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    activeTab === id ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    activeTab === id ? "bg-zinc-950 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -171,7 +255,7 @@ export function ProfilePage() {
                 <form onSubmit={handleSavePersonal} className="p-6 space-y-5">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Personal Information</h2>
-                    <p className="text-sm text-slate-500">Update your personal identity and driver credentials</p>
+                    <p className="text-sm text-slate-500">Update your personal identity and contact details</p>
                   </div>
 
                   {errorMsg && (
@@ -194,30 +278,31 @@ export function ProfilePage() {
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Phone Number</label>
-                    <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 8421081570" />
+                    <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 9373831167" />
                   </div>
 
+                  {/* Document Verification: Aadhaar Details (Optional) */}
                   <div className="border-t border-slate-100 pt-5">
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">Driving License & Documents</h3>
-                    <p className="text-xs text-slate-500 mb-3">Required for automated instant vehicle pickup.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">License Number</label>
-                        <Input value={license} onChange={(e) => setLicense(e.target.value)} placeholder="e.g. CA-1234567" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Issuing State / Region</label>
-                        <Input value={licenseState} onChange={(e) => setLicenseState(e.target.value)} placeholder="e.g. California" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Expiration Date</label>
-                        <Input type="date" value={licenseExpiry} onChange={(e) => setLicenseExpiry(e.target.value)} />
-                      </div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-sm font-bold text-slate-900">Document Verification: Aadhaar Details</h3>
+                      <span className="text-xs text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded">Optional</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3">Provide your Aadhaar details for document verification (optional).</p>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Aadhaar Number <span className="text-slate-400 font-normal">(Optional)</span>
+                      </label>
+                      <Input
+                        value={aadhar}
+                        onChange={(e) => setAadhar(e.target.value)}
+                        placeholder="e.g. 12-digit Aadhaar Number (XXXX-XXXX-XXXX)"
+                        maxLength={16}
+                      />
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 pt-3">
-                    <Button type="submit" className="gap-2" disabled={saving}>
+                    <Button type="submit" className="gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md shadow-orange-500/20" disabled={saving}>
                       <Save className="h-4 w-4" />
                       {saving ? "Saving…" : "Save Changes"}
                     </Button>
@@ -234,7 +319,7 @@ export function ProfilePage() {
                 <form onSubmit={handleChangePassword} className="p-6 space-y-5">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Security & Authentication</h2>
-                    <p className="text-sm text-slate-500">Update your Argon2-secured password</p>
+                    <p className="text-sm text-slate-500">Manage your account password and security credentials</p>
                   </div>
 
                   {pwStatus && (
@@ -277,22 +362,9 @@ export function ProfilePage() {
                         required
                       />
                     </div>
-                    <Button type="submit" className="gap-2" disabled={pwLoading}>
+                    <Button type="submit" className="gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md shadow-orange-500/20" disabled={pwLoading}>
                       <Lock className="h-4 w-4" /> {pwLoading ? "Updating…" : "Update Password"}
                     </Button>
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-5">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <ShieldCheck className="h-6 w-6 text-emerald-500" />
-                        <div>
-                          <p className="font-semibold text-slate-800 text-sm">Session Security</p>
-                          <p className="text-xs text-slate-500">Your session is protected by rotating refresh tokens and rate-limit guardrails.</p>
-                        </div>
-                      </div>
-                      <Badge variant="success">Active</Badge>
-                    </div>
                   </div>
                 </form>
               )}
@@ -316,7 +388,7 @@ export function ProfilePage() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
                         <input type="checkbox" defaultChecked={enabled} className="sr-only peer" />
-                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
                       </label>
                     </div>
                   ))}

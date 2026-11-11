@@ -25,7 +25,11 @@ interface AuthContextType {
     driver_license_state?: string;
     driver_license_country?: string;
     driver_license_expiry?: string;
+    aadhar_number?: string;
+    avatar_url?: string;
+    document_urls?: string[];
   }) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -105,9 +109,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     driver_license_state?: string;
     driver_license_country?: string;
     driver_license_expiry?: string;
+    aadhar_number?: string;
+    avatar_url?: string;
+    document_urls?: string[];
   }) => {
     const updated = await authApi.updateDocuments(data);
     setUser(updated);
+  };
+
+  const uploadAvatar = async (file: File): Promise<User> => {
+    const updated = await authApi.uploadAvatar(file);
+    setUser(updated);
+    return updated;
   };
 
   return (
@@ -122,6 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshUser,
         updateProfile,
         updateDocuments,
+        uploadAvatar,
       }}
     >
       {children}

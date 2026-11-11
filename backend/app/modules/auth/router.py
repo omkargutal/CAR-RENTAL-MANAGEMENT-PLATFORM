@@ -1,9 +1,10 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Cookie, Depends, Header, Request, Response, status
+from fastapi import APIRouter, Cookie, Depends, File, Header, HTTPException, Request, Response, UploadFile, status
 
 from app.common.schemas import ResponseEnvelope
 from app.core.config import settings
+from app.integrations.storage_minio import StorageProvider, get_storage_provider
 from app.modules.auth.dependencies import (
     extract_client_info,
     get_auth_service,
@@ -186,6 +187,31 @@ async def update_documents(
 ):
     updated = await user_service.update_documents(current_user.id, payload)
     return ResponseEnvelope(data=UserRead.model_validate(updated), message="Documents updated successfully.")
+
+
+@router.post("/avatar", response_model=ResponseEnvelope[UserRead])
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service),
+    storage: StorageProvider = Depends(get_storage_provider),
+):
+    """Allows authenticated user to upload their own profile avatar image."""
+    file_ext = (file.filename or "image.jpg").split(".")[-1].lower()
+    if file_ext not in ["jpg", "jpeg", "png", "webp"]:
+        raise HTTPException(status_code=400, detail="Only JPG, PNG, and WebP images are supported.")
+
+    storage_path = f"avatars/{current_user.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+    public_url = await storage.upload_file(
+        file_obj=file.file,
+        path=storage_path,
+        content_type=file.content_type or "image/jpeg",
+    )
+    current_docs = dict(current_user.documents or {})
+    current_docs["avatar_url"] = public_url
+    current_user.documents = current_docs
+    updated = await user_service.user_repo.update(current_user)
+    return ResponseEnvelope(data=UserRead.model_validate(updated), message="Avatar uploaded successfully.")
 
 
 @router.get("/sessions", response_model=ResponseEnvelope[List[SessionRead]])
