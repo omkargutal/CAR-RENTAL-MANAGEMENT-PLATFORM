@@ -26,11 +26,13 @@ class UserProfileUpdate(BaseSchema):
 
 
 class UserDocumentsUpdate(BaseSchema):
-    """Payload for customer to update driving documents and license details."""
+    """Payload for customer to update driving documents, Aadhaar verification, and avatar."""
     driver_license_number: Optional[str] = Field(None, max_length=50)
     driver_license_state: Optional[str] = Field(None, max_length=50)
     driver_license_country: Optional[str] = Field(None, max_length=50)
     driver_license_expiry: Optional[str] = None
+    aadhar_number: Optional[str] = Field(None, max_length=50)
+    avatar_url: Optional[str] = None
     document_urls: Optional[List[str]] = None
 
 
