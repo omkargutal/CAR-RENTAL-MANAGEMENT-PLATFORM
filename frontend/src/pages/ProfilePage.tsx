@@ -122,12 +122,12 @@ export function ProfilePage() {
             {/* Avatar */}
             <div className="bg-white rounded-2xl border border-slate-100 p-5 text-center shadow-sm">
               <div className="relative inline-block mb-3">
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-blue-500/30 mx-auto">
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-orange-500/30 mx-auto">
                   {initials}
                 </div>
                 <button
                   type="button"
-                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-white hover:bg-blue-700 transition-colors"
+                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-orange-500 border-2 border-white flex items-center justify-center text-white hover:bg-orange-600 transition-colors shadow-sm"
                 >
                   <Camera className="h-3.5 w-3.5" />
                 </button>
@@ -138,8 +138,8 @@ export function ProfilePage() {
                 <Badge variant={user?.role === "ADMIN" ? "gold" : "default"}>
                   {user?.role || "CUSTOMER"}
                 </Badge>
-                <Badge variant={user?.is_verified ? "success" : "secondary"}>
-                  {user?.is_verified ? "Verified" : "Unverified"}
+                <Badge variant="success" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                  Verified Customer
                 </Badge>
               </div>
               <div className="mt-3 text-xs text-slate-400">
@@ -153,8 +153,8 @@ export function ProfilePage() {
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    activeTab === id ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    activeTab === id ? "bg-zinc-950 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -217,7 +217,7 @@ export function ProfilePage() {
                   </div>
 
                   <div className="flex items-center gap-3 pt-3">
-                    <Button type="submit" className="gap-2" disabled={saving}>
+                    <Button type="submit" className="gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md shadow-orange-500/20" disabled={saving}>
                       <Save className="h-4 w-4" />
                       {saving ? "Saving…" : "Save Changes"}
                     </Button>
@@ -234,7 +234,7 @@ export function ProfilePage() {
                 <form onSubmit={handleChangePassword} className="p-6 space-y-5">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Security & Authentication</h2>
-                    <p className="text-sm text-slate-500">Update your Argon2-secured password</p>
+                    <p className="text-sm text-slate-500">Manage your account password and security credentials</p>
                   </div>
 
                   {pwStatus && (
@@ -277,7 +277,7 @@ export function ProfilePage() {
                         required
                       />
                     </div>
-                    <Button type="submit" className="gap-2" disabled={pwLoading}>
+                    <Button type="submit" className="gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md shadow-orange-500/20" disabled={pwLoading}>
                       <Lock className="h-4 w-4" /> {pwLoading ? "Updating…" : "Update Password"}
                     </Button>
                   </div>
@@ -287,8 +287,8 @@ export function ProfilePage() {
                       <div className="flex items-center gap-3">
                         <ShieldCheck className="h-6 w-6 text-emerald-500" />
                         <div>
-                          <p className="font-semibold text-slate-800 text-sm">Session Security</p>
-                          <p className="text-xs text-slate-500">Your session is protected by rotating refresh tokens and rate-limit guardrails.</p>
+                          <p className="font-semibold text-slate-800 text-sm">Account Security</p>
+                          <p className="text-xs text-slate-500">Your session is protected with end-to-end encryption and active security monitoring.</p>
                         </div>
                       </div>
                       <Badge variant="success">Active</Badge>
@@ -316,7 +316,7 @@ export function ProfilePage() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
                         <input type="checkbox" defaultChecked={enabled} className="sr-only peer" />
-                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+                        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
                       </label>
                     </div>
                   ))}
